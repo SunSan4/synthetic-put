@@ -38,6 +38,7 @@ export default function SyntheticPutSimulator() {
       </h1>
 
       <div style={{ display: "grid", gap: "1rem", marginBottom: "2rem" }}>
+        <div><strong>Initial Price:</strong> Цена токена до первого стопа</div>
         <input
           type="number"
           step="0.01"
