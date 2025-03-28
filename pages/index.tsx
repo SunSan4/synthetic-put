@@ -16,72 +16,121 @@ export default function SyntheticPutSimulator() {
   const [futurePrice, setFuturePrice] = useState(1);
   const [firstLoss, setFirstLoss] = useState(0);
 
-  const compute = (future: number) => {
-    const qtyAfterStop = targetValue / currentPrice;
-    const pnlNewShort = (currentPrice - future) * qtyAfterStop;
-    const valueTokens = future * (targetValue / initialPrice);
-    const total = valueTokens + pnlNewShort - firstLoss;
-    return { future, total };
+  const qtyAfterStop = currentPrice > 0 ? targetValue / currentPrice : 0;
+  const pnlNewShort = (currentPrice - futurePrice) * qtyAfterStop;
+  const valueTokens = futurePrice * (initialPrice > 0 ? targetValue / initialPrice : 0);
+  const finalTotal = valueTokens + pnlNewShort - firstLoss;
+
+  const computeChartPoint = (price: number) => {
+    const qty = currentPrice > 0 ? targetValue / currentPrice : 0;
+    const pnl = (currentPrice - price) * qty;
+    const value = price * (initialPrice > 0 ? targetValue / initialPrice : 0);
+    return {
+      future: price,
+      total: value + pnl - firstLoss,
+    };
   };
 
-  const result = compute(futurePrice);
+  const chartData = Array.from({ length: 101 }, (_, i) =>
+    computeChartPoint(parseFloat((i * 0.05).toFixed(2)))
+  );
 
-  const chartData = Array.from({ length: 101 }, (_, i) => {
-    const price = (i * 0.05).toFixed(2);
-    return compute(parseFloat(price));
-  });
+  const inputStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    marginBottom: "1rem",
+  };
+
+  const labelStyle = {
+    width: "260px",
+    fontWeight: 500,
+  };
+
+  const inputFieldStyle = {
+    flex: 1,
+    padding: "0.3rem 0.6rem",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+  };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "700px", margin: "auto" }}>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>
+    <div style={{ padding: "2rem", maxWidth: "800px", margin: "auto", fontFamily: "sans-serif" }}>
+      <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "1.5rem" }}>
         Synthetic Put Simulator
       </h1>
 
-      <div style={{ display: "grid", gap: "1rem", marginBottom: "2rem" }}>
-        <div><strong>Initial Price:</strong> Цена токена до первого стопа</div>
-        <input
-          type="number"
-          step="0.01"
-          value={initialPrice}
-          onChange={(e) => setInitialPrice(parseFloat(e.target.value))}
-          placeholder="Initial Price ($1)"
-        />
-        <input
-          type="number"
-          step="0.01"
-          value={currentPrice}
-          onChange={(e) => setCurrentPrice(parseFloat(e.target.value))}
-          placeholder="Current Price (after stop)"
-        />
-        <input
-          type="number"
-          step="0.01"
-          value={targetValue}
-          onChange={(e) => setTargetValue(parseFloat(e.target.value))}
-          placeholder="Target Protected Value ($1000)"
-        />
-        <input
-          type="number"
-          step="0.01"
-          value={futurePrice}
-          onChange={(e) => setFuturePrice(parseFloat(e.target.value))}
-          placeholder="Future Price"
-        />
-        <input
-          type="number"
-          step="0.01"
-          value={firstLoss}
-          onChange={(e) => setFirstLoss(parseFloat(e.target.value))}
-          placeholder="Loss from first stop"
-        />
+      <div>
+        <div style={inputStyle}>
+          <div style={labelStyle}>💰 Initial Price (Цена до первого стопа):</div>
+          <input
+            type="number"
+            step="0.01"
+            value={initialPrice}
+            onChange={(e) => setInitialPrice(parseFloat(e.target.value))}
+            style={inputFieldStyle}
+          />
+        </div>
+
+        <div style={inputStyle}>
+          <div style={labelStyle}>📈 Current Price (после стопа):</div>
+          <input
+            type="number"
+            step="0.01"
+            value={currentPrice}
+            onChange={(e) => setCurrentPrice(parseFloat(e.target.value))}
+            style={inputFieldStyle}
+          />
+        </div>
+
+        <div style={inputStyle}>
+          <div style={labelStyle}>🎯 Target Protected Value ($):</div>
+          <input
+            type="number"
+            step="0.01"
+            value={targetValue}
+            onChange={(e) => setTargetValue(parseFloat(e.target.value))}
+            style={inputFieldStyle}
+          />
+        </div>
+
+        <div style={inputStyle}>
+          <div style={labelStyle}>📊 Future Price (цена через год):</div>
+          <input
+            type="number"
+            step="0.01"
+            value={futurePrice}
+            onChange={(e) => setFuturePrice(parseFloat(e.target.value))}
+            style={inputFieldStyle}
+          />
+        </div>
+
+        <div style={inputStyle}>
+          <div style={labelStyle}>💥 Loss from First Stop ($):</div>
+          <input
+            type="number"
+            step="0.01"
+            value={firstLoss}
+            onChange={(e) => setFirstLoss(parseFloat(e.target.value))}
+            style={inputFieldStyle}
+          />
+        </div>
       </div>
 
-      <div style={{ background: "#f9f9f9", padding: "1rem", borderRadius: "8px" }}>
-        <div>🔁 Шорт после стопа: {(targetValue / currentPrice).toFixed(2)} токенов</div>
-        <div>📉 PnL нового шорта: ${((currentPrice - futurePrice) * (targetValue / currentPrice)).toFixed(2)}</div>
-        <div>🎯 Стоимость токенов через год: ${(futurePrice * (targetValue / initialPrice)).toFixed(2)}</div>
+      <div
+        style={{
+          background: "#f9f9f9",
+          padding: "1rem",
+          borderRadius: "8px",
+          marginTop: "1.5rem",
+          lineHeight: "1.8",
+        }}
+      >
+        <div>📉 Шорт после стопа: <strong>{qtyAfterStop.toFixed(2)}</strong> токенов</div>
+        <div>📉 PnL нового шорта: <strong>${pnlNewShort.toFixed(2)}</strong></div>
+        <div>🪙 Стоимость токенов через год: <strong>${valueTokens.toFixed(2)}</strong></div>
         <div style={{ fontWeight: "bold" }}>
-          💰 Итоговая сумма после всех действий: ${result.total.toFixed(2)}
+          💰 Итоговая сумма после всех действий: <strong>${finalTotal.toFixed(2)}</strong>
         </div>
       </div>
 
